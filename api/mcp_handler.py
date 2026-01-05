@@ -11,6 +11,7 @@ import asyncio
 import inspect
 from typing import Any, Callable, Dict, List
 
+from fastmcp.tools import FunctionTool
 from src.tools.terminology import explain_foundry_term
 from src.tools.design_rules import design_rule_qa
 from src.tools.tapeout import tapeout_checklist
@@ -165,9 +166,13 @@ async def _call_tool_async(name: str, arguments: Dict[str, Any]) -> Any:
     if not tool:
         raise ValueError(f"Unknown tool: {name}")
 
-    # Extract underlying callable if FastMCP FunctionTool is provided
-    if hasattr(tool, "func"):
+    # Extract underlying callable if FastMCP FunctionTool or similar wrapper is provided
+    if isinstance(tool, FunctionTool):
         tool = tool.func  # type: ignore[assignment]
+    elif hasattr(tool, "func"):
+        tool = tool.func  # type: ignore[assignment]
+    elif hasattr(tool, "function"):
+        tool = tool.function  # type: ignore[assignment]
 
     # Run sync or async functions accordingly.
     if inspect.iscoroutinefunction(tool):
