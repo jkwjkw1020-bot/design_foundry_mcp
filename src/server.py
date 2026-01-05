@@ -17,8 +17,6 @@ from starlette.routing import Route
 from starlette.requests import Request
 import uvicorn
 
-from api import mcp_handler
-
 
 def create_server(extra_tools: Iterable[Any] | None = None) -> FastMCP:
     """Create and configure the MCP server instance.
@@ -96,6 +94,9 @@ def _build_sse_app() -> Starlette:
                 {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {exc}"}},
                 status_code=400,
             )
+        # Lazy import to avoid circular dependency on startup
+        from api import mcp_handler
+
         response = mcp_handler.dispatch(payload if isinstance(payload, dict) else {})
         return JSONResponse(response)
 
