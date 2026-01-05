@@ -30,6 +30,17 @@ warnings.filterwarnings(
     category=DeprecationWarning,
     module=r"_vendor\.uvicorn\.protocols\.websockets\.websockets_impl",
 )
+# Also suppress upstream module paths (non-vendored) that Vercel might use
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"websockets\.legacy.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"uvicorn\.protocols\.websockets\.websockets_impl",
+)
 
 def create_server(extra_tools: Iterable[Any] | None = None) -> FastMCP:
     """Create and configure the MCP server instance.
