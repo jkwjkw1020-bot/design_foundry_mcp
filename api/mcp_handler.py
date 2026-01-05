@@ -190,7 +190,21 @@ async def handle_tools_call_async(request: Dict[str, Any]) -> Dict[str, Any]:
             "result": {"content": [{"type": "text", "text": result}]},
         }
     except Exception as exc:  # noqa: BLE001
-        return _error_response(request.get("id"), -32603, str(exc))
+        # Log and return user-friendly text instead of failing the call
+        print(f"tool execution error for {tool_name}: {exc}")
+        return {
+            "jsonrpc": "2.0",
+            "id": request.get("id"),
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"도구 실행 중 오류가 발생했습니다: {exc}",
+                        "is_error": True,
+                    }
+                ]
+            },
+        }
 
 
 async def dispatch_async(request: Dict[str, Any]) -> Dict[str, Any]:
