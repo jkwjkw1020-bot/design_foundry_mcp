@@ -15,6 +15,7 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
+from starlette.responses import Response
 import uvicorn
 
 
@@ -110,6 +111,8 @@ def _build_sse_app() -> Starlette:
             Route("/health", endpoint=health_handler, methods=["GET"]),
             Route("/sse", endpoint=handle_sse, methods=["GET"]),
             Route("/messages", endpoint=handle_messages, methods=["POST"]),
+            Route("/favicon.ico", endpoint=lambda request: Response(status_code=204)),
+            Route("/favicon.png", endpoint=lambda request: Response(status_code=204)),
         ],
     )
 
