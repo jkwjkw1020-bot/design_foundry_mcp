@@ -14,7 +14,10 @@ from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
+from starlette.requests import Request
 import uvicorn
+
+from api import mcp_handler
 
 
 def create_server(extra_tools: Iterable[Any] | None = None) -> FastMCP:
@@ -55,15 +58,19 @@ from .tools import methodology  # noqa: F401
 
 
 def _build_sse_app() -> Starlette:
-    """Create Starlette app that bridges FastMCP over SSE.
+    """Create Starlette app that bridges FastMCP over SSE and JSON RPC.
 
-    This mirrors fastmcp's internal SSE setup but avoids nested asyncio.run
-    calls by letting uvicorn own the event loop.
+    Provides:
+    - GET /          : status JSON
+    - POST /         : JSON-RPC (initialize/tools.list/tools.call) via mcp_handler
+    - GET /health    : health check
+    - GET /sse       : MCP SSE stream
+    - POST /messages : MCP SSE message endpoint
     """
 
     sse = SseServerTransport("/messages")
 
-    async def handle_sse(request):
+    async def handle_sse(request: Request):
         async with sse.connect_sse(
             request.scope, request.receive, request._send
         ) as streams:
@@ -73,17 +80,34 @@ def _build_sse_app() -> Starlette:
                 server._mcp_server.create_initialization_options(),  # type: ignore[attr-defined]
             )
 
-    async def handle_messages(request):
+    async def handle_messages(request: Request):
         await sse.handle_post_message(
             request.scope, request.receive, request._send
         )
 
+    async def root_handler(request: Request):
+        if request.method == "GET":
+            return JSONResponse({"name": "design-foundry-mcp", "version": "1.0.0", "status": "running"})
+        # POST -> JSON-RPC fallback (non-SSE HTTP)
+        try:
+            payload = await request.json()
+        except Exception as exc:  # noqa: BLE001
+            return JSONResponse(
+                {"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": f"Parse error: {exc}"}},
+                status_code=400,
+            )
+        response = mcp_handler.dispatch(payload if isinstance(payload, dict) else {})
+        return JSONResponse(response)
+
+    async def health_handler(request: Request):
+        return JSONResponse({"status": "ok"})
+
     return Starlette(
         debug=server.settings.debug,
         routes=[
-            Route("/", endpoint=lambda request: JSONResponse({"name": "design-foundry-mcp", "version": "1.0.0", "status": "running"})),
-            Route("/health", endpoint=lambda request: JSONResponse({"status": "ok"})),
-            Route("/sse", endpoint=handle_sse),
+            Route("/", endpoint=root_handler, methods=["GET", "POST"]),
+            Route("/health", endpoint=health_handler, methods=["GET"]),
+            Route("/sse", endpoint=handle_sse, methods=["GET"]),
             Route("/messages", endpoint=handle_messages, methods=["POST"]),
         ],
     )
