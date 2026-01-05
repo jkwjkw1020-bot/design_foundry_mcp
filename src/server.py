@@ -121,7 +121,7 @@ def _build_sse_app() -> Starlette:
         # Lazy import to avoid circular dependency on startup
         from api import mcp_handler
 
-        response = mcp_handler.dispatch(payload if isinstance(payload, dict) else {})
+        response = await mcp_handler.dispatch_async(payload if isinstance(payload, dict) else {})
         return JSONResponse(response)
 
     async def health_handler(request: Request):

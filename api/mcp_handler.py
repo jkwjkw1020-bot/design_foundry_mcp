@@ -160,22 +160,21 @@ def _error_response(request_id: Any, code: int, message: str) -> Dict[str, Any]:
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
 
 
-def _call_tool(name: str, arguments: Dict[str, Any]) -> Any:
+async def _call_tool_async(name: str, arguments: Dict[str, Any]) -> Any:
     tool = TOOLS.get(name)
     if not tool:
         raise ValueError(f"Unknown tool: {name}")
 
     # Run sync or async functions accordingly.
     if inspect.iscoroutinefunction(tool):
-        return asyncio.run(tool(**arguments))
+        return await tool(**arguments)
     result = tool(**arguments)
-    # If an async function slipped through without being a coroutinefunction, handle coroutine.
     if inspect.iscoroutine(result):
-        return asyncio.run(result)
+        return await result
     return result
 
 
-def handle_tools_call(request: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_tools_call_async(request: Dict[str, Any]) -> Dict[str, Any]:
     params = request.get("params", {})
     tool_name = params.get("name")
     arguments = params.get("arguments", {}) or {}
@@ -184,7 +183,7 @@ def handle_tools_call(request: Dict[str, Any]) -> Dict[str, Any]:
         return _error_response(request.get("id"), -32602, "Missing tool name")
 
     try:
-        result = _call_tool(tool_name, arguments)
+        result = await _call_tool_async(tool_name, arguments)
         return {
             "jsonrpc": "2.0",
             "id": request.get("id"),
@@ -194,13 +193,20 @@ def handle_tools_call(request: Dict[str, Any]) -> Dict[str, Any]:
         return _error_response(request.get("id"), -32603, str(exc))
 
 
-def dispatch(request: Dict[str, Any]) -> Dict[str, Any]:
+async def dispatch_async(request: Dict[str, Any]) -> Dict[str, Any]:
     method = request.get("method", "")
     if method == "initialize":
         return handle_initialize(request)
     if method == "tools/list":
         return handle_tools_list(request)
     if method == "tools/call":
-        return handle_tools_call(request)
+        return await handle_tools_call_async(request)
     return _error_response(request.get("id"), -32601, "Method not found")
+
+
+def dispatch(request: Dict[str, Any]) -> Dict[str, Any]:
+    """Synchronous wrapper for environments without an event loop."""
+    return asyncio.run(dispatch_async(request))
+
+
 
