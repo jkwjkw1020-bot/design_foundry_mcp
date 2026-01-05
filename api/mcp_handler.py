@@ -167,8 +167,10 @@ async def _call_tool_async(name: str, arguments: Dict[str, Any]) -> Any:
         raise ValueError(f"Unknown tool: {name}")
 
     # Extract underlying callable if FastMCP FunctionTool or similar wrapper is provided
-    if isinstance(tool, FunctionTool):
-        tool = tool.func  # type: ignore[assignment]
+    if isinstance(tool, FunctionTool) and hasattr(tool, "fn"):
+        tool = tool.fn  # type: ignore[assignment]
+    elif hasattr(tool, "fn"):
+        tool = tool.fn  # type: ignore[assignment]
     elif hasattr(tool, "func"):
         tool = tool.func  # type: ignore[assignment]
     elif hasattr(tool, "function"):
