@@ -121,8 +121,16 @@ def _build_sse_app() -> Starlette:
         # Lazy import to avoid circular dependency on startup
         from api import mcp_handler
 
-        response = await mcp_handler.dispatch_async(payload if isinstance(payload, dict) else {})
-        return JSONResponse(response)
+        try:
+            response = await mcp_handler.dispatch_async(payload if isinstance(payload, dict) else {})
+            return JSONResponse(response)
+        except Exception as exc:  # noqa: BLE001
+            # log and return structured error
+            print("mcp-http error", exc)
+            return JSONResponse(
+                {"jsonrpc": "2.0", "id": payload.get("id") if isinstance(payload, dict) else None, "error": {"code": -32603, "message": str(exc)}},
+                status_code=500,
+            )
 
     async def health_handler(request: Request):
         return JSONResponse({"status": "ok"})
