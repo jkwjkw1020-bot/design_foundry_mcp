@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from typing import Any, Iterable
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, settings as mcp_settings
 from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -17,7 +17,19 @@ from starlette.routing import Route
 from starlette.requests import Request
 from starlette.responses import Response
 import uvicorn
+import warnings
 
+# Suppress noisy deprecation warnings from vendored websockets in uvicorn
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"_vendor\.websockets\.legacy.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"_vendor\.uvicorn\.protocols\.websockets\.websockets_impl",
+)
 
 def create_server(extra_tools: Iterable[Any] | None = None) -> FastMCP:
     """Create and configure the MCP server instance.
@@ -105,7 +117,7 @@ def _build_sse_app() -> Starlette:
         return JSONResponse({"status": "ok"})
 
     return Starlette(
-        debug=server.settings.debug,
+        debug=mcp_settings.debug,
         routes=[
             Route("/", endpoint=root_handler, methods=["GET", "POST"]),
             Route("/health", endpoint=health_handler, methods=["GET"]),
@@ -132,9 +144,9 @@ def main() -> None:
 
     uvicorn.run(
         app,
-        host=server.settings.host,
-        port=server.settings.port,
-        log_level=server.settings.log_level,
+        host=mcp_settings.host,
+        port=mcp_settings.port,
+        log_level=mcp_settings.log_level,
     )
 
 
