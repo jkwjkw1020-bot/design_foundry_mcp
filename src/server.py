@@ -12,6 +12,7 @@ from typing import Any, Iterable
 from fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
+from starlette.responses import JSONResponse
 from starlette.routing import Route
 import uvicorn
 
@@ -80,6 +81,8 @@ def _build_sse_app() -> Starlette:
     return Starlette(
         debug=server.settings.debug,
         routes=[
+            Route("/", endpoint=lambda request: JSONResponse({"name": "design-foundry-mcp", "version": "1.0.0", "status": "running"})),
+            Route("/health", endpoint=lambda request: JSONResponse({"status": "ok"})),
             Route("/sse", endpoint=handle_sse),
             Route("/messages", endpoint=handle_messages, methods=["POST"]),
         ],
