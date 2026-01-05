@@ -165,6 +165,10 @@ async def _call_tool_async(name: str, arguments: Dict[str, Any]) -> Any:
     if not tool:
         raise ValueError(f"Unknown tool: {name}")
 
+    # Extract underlying callable if FastMCP FunctionTool is provided
+    if hasattr(tool, "func"):
+        tool = tool.func  # type: ignore[assignment]
+
     # Run sync or async functions accordingly.
     if inspect.iscoroutinefunction(tool):
         return await tool(**arguments)
