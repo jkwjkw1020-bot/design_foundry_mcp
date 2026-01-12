@@ -127,7 +127,7 @@ TIMING_VIOLATIONS_KNOWLEDGE = {
             "step3": "Fanout 수와 각 sink의 input cap 확인",
             "step4": "Wire length 확인",
             "step5": "Max cap limit 대비 초과량 확인",
-        ],
+        },
         "solutions": {
             "fanout_splitting": [
                 "Buffer tree로 fanout 분산",
@@ -157,7 +157,7 @@ TIMING_VIOLATIONS_KNOWLEDGE = {
             "step2": "연결된 sink cell 목록 확인",
             "step3": "Signal 특성 파악 (clock, reset, data)",
             "step4": "Physical distribution 확인",
-        ],
+        },
         "solutions": {
             "buffer_tree": [
                 "계층적 buffer tree 구성",
