@@ -19,6 +19,9 @@ from src.tools.process import compare_process_nodes
 from src.tools.pdk import pdk_document_guide
 from src.tools.communication import foundry_communication_template
 from src.tools.methodology import design_methodology_guide
+from src.tools.drc_debug import drc_error_guide
+from src.tools.timing_debug import timing_violation_debug
+from src.tools.acronym import acronym_decoder
 
 # Tool registry
 TOOLS: Dict[str, Callable[..., Any]] = {
@@ -29,6 +32,9 @@ TOOLS: Dict[str, Callable[..., Any]] = {
     "pdk_document_guide": pdk_document_guide,
     "foundry_communication_template": foundry_communication_template,
     "design_methodology_guide": design_methodology_guide,
+    "drc_error_guide": drc_error_guide,
+    "timing_violation_debug": timing_violation_debug,
+    "acronym_decoder": acronym_decoder,
 }
 
 # Tool definitions for tools/list
@@ -132,6 +138,77 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
                 "process_node": {"type": "string", "default": "advanced"},
             },
             "required": ["methodology_topic"],
+        },
+    },
+    {
+        "name": "drc_error_guide",
+        "description": "DRC(Design Rule Check) 에러 유형별 원인 분석과 해결 방법을 제공합니다. spacing, width, enclosure, density, antenna 등의 violation 해결을 안내합니다.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "error_type": {
+                    "type": "string",
+                    "description": "DRC 에러 유형: spacing, width, enclosure, density, antenna, overlap, extension",
+                    "enum": ["spacing", "width", "enclosure", "density", "antenna", "overlap", "extension"],
+                },
+                "layer": {
+                    "type": "string",
+                    "description": "관련 레이어 (예: M1, VIA1, POLY)",
+                    "default": "general",
+                },
+                "error_description": {
+                    "type": "string",
+                    "description": "추가적인 에러 상황 설명",
+                    "default": "",
+                },
+            },
+            "required": ["error_type"],
+        },
+    },
+    {
+        "name": "timing_violation_debug",
+        "description": "Timing violation 유형별 디버깅 방법과 해결 전략을 제공합니다. setup, hold, max_transition, max_capacitance 등의 violation 해결을 안내합니다.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "violation_type": {
+                    "type": "string",
+                    "description": "Timing violation 유형: setup, hold, max_transition, max_capacitance, max_fanout, clock_skew, recovery, removal",
+                    "enum": ["setup", "hold", "max_transition", "max_capacitance", "max_fanout", "clock_skew", "recovery", "removal"],
+                },
+                "severity": {
+                    "type": "string",
+                    "description": "심각도: critical, medium, minor",
+                    "enum": ["critical", "medium", "minor"],
+                    "default": "medium",
+                },
+                "context": {
+                    "type": "string",
+                    "description": "추가 상황 설명",
+                    "default": "",
+                },
+            },
+            "required": ["violation_type"],
+        },
+    },
+    {
+        "name": "acronym_decoder",
+        "description": "반도체 업계 약어와 축약어를 해석합니다. 같은 약어도 맥락에 따라 다른 의미를 가질 수 있어 context를 고려하여 설명합니다.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "acronym": {
+                    "type": "string",
+                    "description": "해석이 필요한 약어 (예: DRC, LVS, OPC, CMP)",
+                },
+                "context": {
+                    "type": "string",
+                    "description": "약어가 사용된 맥락: general, design, foundry, test, package, business",
+                    "enum": ["general", "design", "foundry", "test", "package", "business"],
+                    "default": "general",
+                },
+            },
+            "required": ["acronym"],
         },
     },
 ]

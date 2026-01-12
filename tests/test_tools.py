@@ -9,6 +9,9 @@ from src.tools import (
     pdk,
     communication,
     methodology,
+    drc_debug,
+    timing_debug,
+    acronym,
 )
 
 
@@ -120,6 +123,24 @@ async def test_design_methodology_invalid_topic():
     assert "지원하지 않는" in resp or "topic" in resp.lower()
 
 
+def test_drc_error_guide():
+    result = drc_debug.drc_error_guide("spacing", "M1", "")
+    assert result
+    assert "spacing" in result.lower() or "간격" in result
+
+
+def test_timing_violation_debug():
+    result = timing_debug.timing_violation_debug("setup", "medium", "")
+    assert result
+    assert "setup" in result.lower()
+
+
+def test_acronym_decoder():
+    result = acronym.acronym_decoder("DRC", "design")
+    assert result
+    assert "Design Rule Check" in result
+
+
 MAX_BYTES = 24_576
 
 
@@ -143,6 +164,9 @@ async def test_tool_responses_size_and_markdown():
             {"project_name": "Proj", "process": "5nm", "issue_description": "Need rule info", "sender": "Team"},
         ),
         await methodology.design_methodology_guide("floorplan", "advanced"),
+        drc_debug.drc_error_guide("width", "M1", ""),
+        timing_debug.timing_violation_debug("hold", "minor", ""),
+        acronym.acronym_decoder("PDK", "foundry"),
     ]
 
     for resp in responses:
